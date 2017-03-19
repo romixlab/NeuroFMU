@@ -1,1 +1,1 @@
-CONFIG_SELECTED_CONFIGURATION="./distortos//distortosConfiguration.mk"
+CONFIG_SELECTED_CONFIGURATION="./distortosConfiguration.mk"
