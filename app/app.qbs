@@ -14,10 +14,18 @@ Project {
             "../distortos/external/CMSIS-STM32F4/"
         ]
 
+        cpp.defines: [
+            "STM32F427xx"
+        ]
+
         Group {
             name: "neurofmu"
             prefix: "./"
-            files: ["*.cpp", "*.hpp"]
+            files: [
+                "*.cpp",
+                "*.hpp",
+                "gpio.h",
+            ]
         }
     }
 }

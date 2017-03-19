@@ -28,7 +28,7 @@ Product {
         "-std=gnu99"
     ]
     cpp.cxxFlags: [
-        "-std=gnu++11",
+        "-std=gnu++14",
         "-fno-rtti",
         "-fno-exceptions"
     ]

@@ -1,6 +1,17 @@
 #include "distortos/ThisThread.hpp"
 #include "distortos/StaticThread.hpp"
-#include "stm32f427xx.h"
+#include "stm32f4xx.h"
+#include "gpio.h"
+
+/**
+ * SPI int: sck - pa5, miso - pa6, mosi - pa7
+ * L3GD20H Gyro, !gyro_cs pc13, gyro_drdy pb0
+ * MS5611 Baro, !baro_cs pd7
+ * LSM303D Acc,Mag, !accel_mag_cs pc15, accel_drdy pb4, mag_drdy pb1
+ * MPU6000, !mpu_cs pc2, mpu_drdy pd15
+ */
+
+typedef GPIOPin<GPIOE_BASE, 12> AmberLED;
 
 int main()
 {
@@ -13,10 +24,13 @@ int main()
 	UART7->BRR = 0x187; // 115200 at 45MHz
 	UART7->CR1 |= USART_CR1_UE_Msk | USART_CR1_TE; // usart en, tx en
 
+    AmberLED::config(GPIOConfig::Mode::Output);
 
 	while (1) {
-		UART7->DR = 0x77;
+        AmberLED::high();
 		distortos::ThisThread::sleepFor(std::chrono::milliseconds(100));
+        AmberLED::low();
+        distortos::ThisThread::sleepFor(std::chrono::milliseconds(100));
 	}
 	return 0;
 }
