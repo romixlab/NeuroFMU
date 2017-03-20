@@ -1,0 +1,2 @@
+Append to Parameters -> C++ -> Code model
+-Wno-c++14-binary-literal -Wno-old-style-cast

@@ -1,36 +1,41 @@
 #include "distortos/ThisThread.hpp"
 #include "distortos/StaticThread.hpp"
-#include "stm32f4xx.h"
+#include "CMSIS-proxy.h"
 #include "gpio.h"
 
-/**
- * SPI int: sck - pa5, miso - pa6, mosi - pa7
- * L3GD20H Gyro, !gyro_cs pc13, gyro_drdy pb0
- * MS5611 Baro, !baro_cs pd7
- * LSM303D Acc,Mag, !accel_mag_cs pc15, accel_drdy pb4, mag_drdy pb1
- * MPU6000, !mpu_cs pc2, mpu_drdy pd15
- */
+#include "boardgoodies.h"
 
-typedef GPIOPin<GPIOE_BASE, 12> AmberLED;
+void blinker()
+{
+    while(1) {
+        AmberLED::high();
+        distortos::ThisThread::sleepFor(std::chrono::milliseconds(100));
+        AmberLED::low();
+        distortos::ThisThread::sleepFor(std::chrono::milliseconds(100));
+    }
+}
 
 int main()
-{
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
-	GPIOE->MODER |= GPIO_MODER_MODE8_1; // tx af
-	GPIOE->AFR[1] |= GPIO_AFRH_AFSEL8_3; // af8
+{ 
+    Serial5TXPin::mode(GPIO::Mode::Alternate);
+    Serial5TXPin::af(GPIO::AF::AF8);
 
 
 	RCC->APB1ENR |= RCC_APB1ENR_UART7EN;
 	UART7->BRR = 0x187; // 115200 at 45MHz
 	UART7->CR1 |= USART_CR1_UE_Msk | USART_CR1_TE; // usart en, tx en
 
-    AmberLED::config(GPIOConfig::Mode::Output);
+    AmberLED::mode(GPIO::Mode::Output);
+    auto blinkerThread = distortos::makeAndStartStaticThread<256>(1, blinker);
+
+    Serial4RXPin::mode(GPIO::Mode::Input);
+    Serial4RXPin::pull(GPIO::Pull::Up);
 
 	while (1) {
-        AmberLED::high();
-		distortos::ThisThread::sleepFor(std::chrono::milliseconds(100));
-        AmberLED::low();
-        distortos::ThisThread::sleepFor(std::chrono::milliseconds(100));
+
+
+        UART7->DR = Serial4RXPin::read() ? 0x77 : 0x79;
+        distortos::ThisThread::sleepFor(std::chrono::seconds{1});
 	}
 	return 0;
 }

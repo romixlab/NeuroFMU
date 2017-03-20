@@ -10,12 +10,9 @@ Project {
             "../output/include",
             "../distortos/include",
             "../distortos/source/chip/STM32/include/",
+            "../distortos/source/chip/STM32/STM32F4/include/distortos/chip/",
             "../distortos/external/CMSIS/",
-            "../distortos/external/CMSIS-STM32F4/"
-        ]
-
-        cpp.defines: [
-            "STM32F427xx"
+            "../distortos/external/CMSIS-STM32F4/",
         ]
 
         Group {
@@ -24,6 +21,7 @@ Project {
             files: [
                 "*.cpp",
                 "*.hpp",
+                "boardgoodies.h",
                 "gpio.h",
             ]
         }
