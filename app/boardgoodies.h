@@ -6,6 +6,10 @@ typedef GPIOPinX<GPIO::A, 5>    SCKInternal;
 typedef GPIOPinX<GPIO::A, 6>    MISOInternal;
 typedef GPIOPinX<GPIO::A, 7>    MOSIInternal;
 
+// I2C 2
+typedef GPIOPinX<GPIO::B, 10>    I2CTwoSCL;
+typedef GPIOPinX<GPIO::B, 11>    I2CTwoSDA;
+
 // L3GD20H Gyro
 typedef GPIOPinX<GPIO::C, 13>   GyroCSPin;
 typedef GPIOPinX<GPIO::B, 0>    GyroReadyPin;
