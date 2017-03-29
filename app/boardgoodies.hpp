@@ -1,10 +1,13 @@
 #pragma once
-#include "gpio.h"
+#include "gpio.hpp"
+#include "spi.hpp"
 
 // Internal SPI interface
 typedef GPIOPinX<GPIO::A, 5>    SCKInternal;
 typedef GPIOPinX<GPIO::A, 6>    MISOInternal;
 typedef GPIOPinX<GPIO::A, 7>    MOSIInternal;
+typedef SPIConfigX<SCKInternal, MOSIInternal, MISOInternal,
+                   GPIO::AF::AF5, SPI1_BASE> InternalSPI;
 
 // I2C 2
 typedef GPIOPinX<GPIO::B, 10>    I2CTwoSCL;

@@ -1,9 +1,10 @@
 #include "distortos/ThisThread.hpp"
 #include "distortos/StaticThread.hpp"
 #include "CMSIS-proxy.h"
-#include "gpio.h"
+#include "gpio.hpp"
 #include "string.h"
-#include "boardgoodies.h"
+#include "boardgoodies.hpp"
+#include "spi.hpp"
 
 [[noreturn]] void blinker()
 {
@@ -42,29 +43,10 @@ void blink(uint8_t n)
     }
 }
 
-template<class SCKPin, class MOSIPin, class MISOPin, GPIO::AF af>
-class SPIConfigurator
-{
-public:
-    static void up()
-    {
-            SCKPin::mode(GPIO::Mode::Alternate);
-            SCKPin::af(af);
-            SCKPin::speed(GPIO::Speed::High);
 
-            MOSIPin::mode(GPIO::Mode::Alternate);
-            MOSIPin::af(af);
-            MOSIPin::speed(GPIO::Speed::High);
 
-            MISOPin::mode(GPIO::Mode::Alternate);
-            MISOPin::af(af);
-    }
 
-    static SPI_TypeDef* instance();
 
-private:
-    SPIConfigurator();
-};
 
 template<class CSPin>
 class L3GD20_20H
@@ -104,14 +86,9 @@ int main()
     MPUCSPin::mode(GPIO::Mode::Output);
     MPUCSPin::high();
 
-    RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
 
-    typedef SPIConfigurator<SCKInternal, MOSIInternal, MISOInternal, GPIO::AF::AF5> InternalSPIConfigurator;
-    InternalSPIConfigurator::up();
-    //InternalSPIConfigurator::speed();
-    // SPI internalSPI = InternalSPIConfigurator::instance();
-
+    InternalSPI::up();
 
     SPI1->CR1 &=~ SPI_CR1_SPE;
     SPI1->CR1 |= SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_MSTR;

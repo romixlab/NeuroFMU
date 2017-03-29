@@ -21,8 +21,6 @@ Project {
             files: [
                 "*.cpp",
                 "*.hpp",
-                "boardgoodies.h",
-                "gpio.h",
             ]
         }
     }
