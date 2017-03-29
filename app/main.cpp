@@ -63,6 +63,11 @@ public:
 private:
 };
 
+void test777()
+{
+    InternalSPI::up(Duplex{SPI::Duplex::Full});
+}
+
 int main()
 { 
     Serial5TXPin::mode(GPIO::Mode::Alternate);
@@ -85,10 +90,9 @@ int main()
 
     MPUCSPin::mode(GPIO::Mode::Output);
     MPUCSPin::high();
+test777();
 
-
-
-    InternalSPI::up();
+    //InternalSPI::up();
 
     SPI1->CR1 &=~ SPI_CR1_SPE;
     SPI1->CR1 |= SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_MSTR;

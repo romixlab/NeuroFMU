@@ -48,27 +48,27 @@ public:
 };
 
 struct Duplex : magic::Argument<uint16_t> {
-  explicit Duplex(uint16_t mode = (uint16_t)SPI::Duplex::Full) : Argument(mode) {}
+  explicit Duplex(SPI::Duplex duplex = SPI::Duplex::Full) : Argument((uint16_t)duplex) {}
 };
 
 struct FrameFormat : magic::Argument<uint16_t> {
-  explicit FrameFormat(uint16_t format = (uint16_t)SPI::FrameFormat::FrameIs8Bit) : Argument(format) {}
+  explicit FrameFormat(SPI::FrameFormat fm = SPI::FrameFormat::FrameIs8Bit) : Argument((uint16_t)fm) {}
 };
 
 struct SlaveManagement : magic::Argument<uint16_t> {
-  explicit SlaveManagement(uint16_t sm = (uint16_t)SPI::SlaveManagement::SoftwareSelected) : Argument(sm) {}
+  explicit SlaveManagement(SPI::SlaveManagement sm = SPI::SlaveManagement::SoftwareSelected) : Argument((uint16_t)sm) {}
 };
 
 struct BaudRate : magic::Argument<uint16_t> {
-  explicit BaudRate(uint16_t baud = (uint16_t)SPI::BaudRate::Div256) : Argument(baud) {}
+  explicit BaudRate(SPI::BaudRate baud = SPI::BaudRate::Div256) : Argument((uint16_t)baud) {}
 };
 
 struct Mode : magic::Argument<uint16_t> {
-  explicit Mode(uint16_t mode = (uint16_t)SPI::Mode::Master) : Argument(mode) {}
+  explicit Mode(SPI::Mode mode = SPI::Mode::Master) : Argument((uint16_t)mode) {}
 };
 
 struct Sampling : magic::Argument<uint16_t> {
-  explicit Sampling(uint16_t sampling = (uint16_t)SPI::Sampling::NormalLeading) : Argument(sampling) {}
+  explicit Sampling(SPI::Sampling sampling = SPI::Sampling::NormalLeading) : Argument((uint16_t)sampling) {}
 };
 
 
@@ -95,9 +95,16 @@ public:
             MISOPin::af(af);
     }
 
-    template <typename ...T> static void getVolume(T ...args) {
-//      int w = magic::get<Width>(args...);
-//      int h = magic::get<Height>(args...);
+    template <typename ...T>
+    static void up(T ...args) {
+        uint16_t duplex = magic::get<Duplex>(args...);
+        uint16_t frameFormat = magic::get<FrameFormat>(args...);
+        uint16_t slaveManagement = magic::get<SlaveManagement>(args...);
+        uint16_t baudRate = magic::get<BaudRate>(args...);
+        uint16_t mode = magic::get<Mode>(args...);
+        uint16_t sampling = magic::get<Sampling>(args...);
+        instance()->CR1 = duplex | frameFormat | slaveManagement
+                        | baudRate | mode | sampling;
     }
 
     static SPI_TypeDef* instance()
