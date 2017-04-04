@@ -2,9 +2,14 @@
 #include "magic.hpp"
 #include "gpio.hpp"
 
+namespace barehw {
+
 class SPI
 {
 public:
+    SPI(SPI_TypeDef *cmsisSPI) : m_spi(cmsisSPI)
+    { }
+
     enum class Duplex : uint16_t {
         Full       = 0,
         FullRXOnly = SPI_CR1_RXONLY,
@@ -45,6 +50,24 @@ public:
         InvertedLeading  = SPI_CR1_CPOL,
         InvertedTrailing = SPI_CR1_CPOL | SPI_CR1_CPHA
     };
+
+    template<typename T>
+    void wtx(T x)
+    {
+        while ((m_spi->SR & SPI_SR_TXE) == 0);
+        m_spi->DR = x;
+    }
+
+    template<typename T>
+    T wrx()
+    {
+        while ((m_spi->SR & SPI_SR_RXNE) == 0);
+        return m_spi->DR;
+    }
+
+private:
+    SPI_TypeDef *m_spi;
+
 };
 
 struct Duplex : magic::Argument<uint16_t> {
@@ -72,31 +95,25 @@ struct Sampling : magic::Argument<uint16_t> {
 };
 
 
-template<typename SCKPin, typename MOSIPin, typename MISOPin, GPIO::AF af, uint32_t SPI>
+template<typename SCKPin, typename MOSIPin, typename MISOPin, GPIO::AF af, uint32_t CMSIS_SPI>
 class SPIConfigX
 {
 public:
-    static void clock()
-    {
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
-    }
-
-    static void gpio()
-    {
-            SCKPin::mode(GPIO::Mode::Alternate);
-            SCKPin::af(af);
-            SCKPin::speed(GPIO::Speed::High);
-
-            MOSIPin::mode(GPIO::Mode::Alternate);
-            MOSIPin::af(af);
-            MOSIPin::speed(GPIO::Speed::High);
-
-            MISOPin::mode(GPIO::Mode::Alternate);
-            MISOPin::af(af);
-    }
-
     template <typename ...T>
     static void up(T ...args) {
+        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+
+        SCKPin::mode(GPIO::Mode::Alternate);
+        SCKPin::af(af);
+        SCKPin::speed(GPIO::Speed::High);
+
+        MOSIPin::mode(GPIO::Mode::Alternate);
+        MOSIPin::af(af);
+        MOSIPin::speed(GPIO::Speed::High);
+
+        MISOPin::mode(GPIO::Mode::Alternate);
+        MISOPin::af(af);
+
         uint16_t duplex = magic::get<Duplex>(args...);
         uint16_t frameFormat = magic::get<FrameFormat>(args...);
         uint16_t slaveManagement = magic::get<SlaveManagement>(args...);
@@ -104,15 +121,16 @@ public:
         uint16_t mode = magic::get<Mode>(args...);
         uint16_t sampling = magic::get<Sampling>(args...);
         instance()->CR1 = duplex | frameFormat | slaveManagement
-                        | baudRate | mode | sampling;
+                        | baudRate | mode | sampling | SPI_CR1_SPE;
     }
 
     static SPI_TypeDef* instance()
     {
-        return reinterpret_cast<SPI_TypeDef *>(SPI);
+        return reinterpret_cast<SPI_TypeDef *>(CMSIS_SPI);
     }
 
 private:
     SPIConfigX();
 };
 
+} // namespace barehw

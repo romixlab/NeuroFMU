@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include "CMSIS-proxy.h"
 
+namespace barehw {
+
 class GPIO
 {
 public:
@@ -171,3 +173,5 @@ public:
 private:
     GPIOPinX();
 };
+
+} // namespace barehw

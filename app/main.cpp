@@ -5,6 +5,9 @@
 #include "string.h"
 #include "boardgoodies.hpp"
 #include "spi.hpp"
+#include "l3gd20.hpp"
+
+using namespace barehw;
 
 [[noreturn]] void blinker()
 {
@@ -25,14 +28,6 @@ void write(uint8_t *p, uint8_t len)
     }
 }
 
-uint8_t txrx(uint8_t tx)
-{
-    while ((SPI1->SR & SPI_SR_TXE) == 0);
-    SPI1->DR = tx;
-    while ((SPI1->SR & SPI_SR_RXNE) == 0);
-    return (uint8_t)SPI1->DR;
-}
-
 void blink(uint8_t n)
 {
     for (uint8_t i = 0; i < n; ++i) {
@@ -45,61 +40,36 @@ void blink(uint8_t n)
 
 
 
-
-
-
-template<class CSPin>
-class L3GD20_20H
-{
-public:
-    void h() {
-        CSPin::high();
-    }
-
-    void l() {
-        CSPin::low();
-    }
-
-private:
-};
-
 void test777()
 {
-    InternalSPI::up(Duplex{SPI::Duplex::Full});
+
 }
 
 int main()
 { 
+    InternalSPI::up(BaudRate{SPI::BaudRate::Div4},
+                    SlaveManagement{SPI::SlaveManagement::SoftwareSelected},
+                    Mode{SPI::Mode::Master});
+
     Serial5TXPin::mode(GPIO::Mode::Alternate);
     Serial5TXPin::af(GPIO::AF::AF8);
 	RCC->APB1ENR |= RCC_APB1ENR_UART7EN;
 	UART7->BRR = 0x187; // 115200 at 45MHz
 	UART7->CR1 |= USART_CR1_UE_Msk | USART_CR1_TE; // usart en, tx en
 
-    AmberLED::mode(GPIO::Mode::Output);
-    //auto blinkerThread = distortos::makeAndStartStaticThread<512>(150, blinker);
 
-    GyroCSPin::mode(GPIO::Mode::Output);
-    GyroCSPin::high();
+
+    AmberLED::mode(GPIO::Mode::Output);
+    auto blinkerThread = distortos::makeAndStartStaticThread<512>(150, blinker);
+
+    mems::L3GD20<InternalSPI, GyroCSPin> l3gd20;
+    mems::LSM303D<InternalSPI, AccMagCSPin> lsm303d;
 
     BaroCSPin::mode(GPIO::Mode::Output);
     BaroCSPin::high();
 
-    AccMagCSPin::mode(GPIO::Mode::Output);
-    AccMagCSPin::high();
-
     MPUCSPin::mode(GPIO::Mode::Output);
     MPUCSPin::high();
-test777();
-
-    //InternalSPI::up();
-
-    SPI1->CR1 &=~ SPI_CR1_SPE;
-    SPI1->CR1 |= SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_MSTR;
-
-    SPI1->CR1 |= SPI_CR1_SPE;
-    volatile uint16_t cr1 = SPI1->CR1;
-    volatile u_int16_t sr = SPI1->SR;
 
 //    uint8_t d[16];
 //    d[0] = (uint8_t)(SPI1->SR >> 8);
@@ -108,33 +78,27 @@ test777();
 //    write(d, 4);
 
 
-L3GD20_20H<AmberLED> l3gd20;
-l3gd20.h();
+
 
     //write(d, 4);
 
 	while (1) {
-        //GyroCSPin::low();
-        AccMagCSPin::low();
-        distortos::ThisThread::sleepFor(std::chrono::milliseconds(1));
-
-        uint8_t dummy = txrx(0b11000000 | 0x0f);
-        uint8_t whoami = txrx(0x00);
-        //d[1] = spiReceiveByte();
-        //GyroCSPin::high();
-        AccMagCSPin::high();
 
         char data[64];
-        data[0] = dummy;
-        data[1] = whoami;
-        data[2] = '\r';
-        data[3] = '\n';
-        //sprintf(data, "read: %d %d\r\n", dummy, whoami);
+        uint8_t xyz[6];
+        l3gd20.read((uint8_t *)xyz);
 
-        write((uint8_t *)data, 4);
+        int16_t x;
+        uint8_t *p = (uint8_t *)&x;
+        p[0] = xyz[0];
+        p[1] = xyz[1];
+        int16_t y = (int16_t)(((uint16_t)xyz[3] << 8) | xyz[2]);
+        int16_t z = (int16_t)(((uint16_t)xyz[5] << 8) | xyz[4]);
+        sprintf(data, "x:%d\r\n", x, y, z);
+        write((uint8_t *)data, strlen(data));
 
 
-        distortos::ThisThread::sleepFor(std::chrono::milliseconds(500));
+        distortos::ThisThread::sleepFor(std::chrono::milliseconds(50));
 	}
 	return 0;
 }
