@@ -65,21 +65,32 @@ public:
         AF15  = 0b1111
     };
 
+    enum class ExtiType {
+        Event,
+        Interrupt
+    };
+
+    enum class ExtiEdge {
+        Rising,
+        Falling,
+        Both
+    };
+
 private:
     GPIO();
 };
 
-template<uint32_t PORT>
-class GPIOClock
-{
-public:
-    static void enable()
-    {
-        RCC->AHB1ENR |= (PORT >> 10);
-    }
-private:
-    GPIOClock();
-};
+//template<uint32_t PORT>
+//class GPIOClock
+//{
+//public:
+//    static void enable()
+//    {
+//        RCC->AHB1ENR |= (PORT >> 10);
+//    }
+//private:
+//    GPIOClock();
+//};
 
 template<uint32_t PORT, uint8_t PIN, uint8_t AFRidx = PIN >= 8>
 class GPIOAFConfig;
@@ -153,6 +164,34 @@ public:
     static void af(GPIO::AF af)
     {
         GPIOAFConfig<PORT, PIN>::config(af);
+    }
+
+    static void exti(GPIO::ExtiEdge extiEdge,
+                     GPIO::ExtiType extiType = GPIO::ExtiType::Interrupt)
+    {
+        // EXTI line config
+        SYSCFG->EXTICR[PIN >> 2] &=~ ((uint32_t)0b1111 << (4 * (PIN & 0b11)));
+        uint32_t portNumber = (PORT - GPIOA_BASE) >> 10;
+        SYSCFG->EXTICR[PIN >> 2] |= (portNumber << (4 * (PIN & 0b11)));
+
+        // Interrupt or Event mode
+        EXTI->IMR &=~ PIN;
+        if (extiType == GPIO::ExtiType::Interrupt)
+            EXTI->IMR |= PIN;
+
+        EXTI->EMR &=~ PIN;
+        if (extiType == GPIO::ExtiType::Event)
+            EXTI->EMR |= PIN;
+
+        // Rising or Falling
+        EXTI->RTSR &=~ PIN;
+        if ((extiEdge == GPIO::ExtiEdge::Rising) | (extiEdge == GPIO::ExtiEdge::Both))
+            EXTI->RTSR |= PIN;
+
+        EXTI->FTSR &=~ PIN;
+        if ((extiEdge == GPIO::ExtiEdge::Falling) | (extiEdge == GPIO::ExtiEdge::Both))
+            EXTI->FTSR |= PIN;
+
     }
 
     static void high()
